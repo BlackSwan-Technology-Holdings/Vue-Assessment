@@ -14,19 +14,33 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-        main:
+
+        login:
+            pattern:  ^/api/login_check
+            stateless: true
             anonymous: true
-            lazy: true
+            json_login:
+                username_path: email
+                password_path: password
+                check_path:               /api/login_check
+                success_handler:          tmc.authentication_success_handler
+                failure_handler:          tmc.authentication_failure_handler
+            #json_login:
+                #check_path: app_login
+                #username_path: email
+                #password_path: password
+        api:
+            pattern:   ^/api
+            stateless: true
+            anonymous: true
             provider: app_user_provider
             guard:
                 authenticators:
-                    - App\Security\LoginFormAuthenticator
-            logout:
-                path: app_logout
-            json_login:
-                check_path: app_login
-                username_path: email
-                password_path: password
+                    - lexik_jwt_authentication.jwt_token_authenticator
+        register:
+            pattern:  ^/api/register
+            stateless: true
+            anonymous: true
                 # where to redirect after logout
                 # target: app_any_route
 
@@ -40,5 +54,7 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/api/login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/api/register, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/api/docs, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/api,       roles: IS_AUTHENTICATED_FULLY }

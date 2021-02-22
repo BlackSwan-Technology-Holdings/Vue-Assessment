@@ -29,3 +29,11 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    tmc.authentication_failure_handler:
+        class: App\EventListener\AuthenticationFailureHandler
+    tmc.authentication_success_handler:
+        class: App\EventListener\AuthenticationSuccessListener
+
+   # App\ApiPlatform\UserContactsExtention:
+    #    arguments: ['@security.token_storage']
+

@@ -5,6 +5,7 @@ namespace App\DataPersisters;
 use ApiPlatform\Core\DataPersister\ContextAwareDataPersisterInterface;
 use App\Entity\Users\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 final class UserDataPersister implements ContextAwareDataPersisterInterface
@@ -12,11 +13,13 @@ final class UserDataPersister implements ContextAwareDataPersisterInterface
     
     private $userPasswordEncoder;
     private $entityManager;
+    private $jwt;
     
-    public function __construct(EntityManagerInterface $entityManager, UserPasswordEncoderInterface $userPasswordEncoder)
+    public function __construct(EntityManagerInterface $entityManager, UserPasswordEncoderInterface $userPasswordEncoder, JWTTokenManagerInterface $jwt)
     {
         $this->userPasswordEncoder = $userPasswordEncoder;
         $this->entityManager = $entityManager;
+        $this->jwt = $jwt;
     }
     
     /**
@@ -30,6 +33,7 @@ final class UserDataPersister implements ContextAwareDataPersisterInterface
     /**
      * @param User $data
      * @return User
+     * @throws \Exception
      */
     public function persist($data, array $context = [])
     {
@@ -39,10 +43,11 @@ final class UserDataPersister implements ContextAwareDataPersisterInterface
                 $this->userPasswordEncoder->encodePassword($data, $data->getPlainPassword())
             );
         }
-    
+        $data->setCreatedAt(new \DateTime());
+        $data->setUpdatedAt(new \DateTime());
         $this->entityManager->persist($data);
         $this->entityManager->flush();
-        
+        $data->token = $this->jwt->create($data);
         return $data;
     }
     

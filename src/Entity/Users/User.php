@@ -3,8 +3,12 @@
 namespace App\Entity\Users;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Annotation\ApiSubresource;
 use App\Controller\ApiPlatform\Register;
+use App\Entity\Messaging\Contact;
 use App\Repository\Users\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -20,13 +24,17 @@ use Symfony\Component\Validator\Constraints as Assert;
  *         "post"={
  *             "path"="/register",
  *             "method"="POST",
+ *
  *             "swagger_context"={
  *                 "tags"={"Authentication"},
  *                 "summary"={"User registration"}
  *             },
  *             "denormalization_context"={
  *                  "groups"={"user:register"}
- *              }
+ *              },
+ *              "normalization_context" = {
+ *                  "groups"={"user:auth"}
+ *              },
  *         },
  *         "get"={
  *             "path"="/users",
@@ -38,6 +46,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *     },
  * )
  * @UniqueEntity(fields={"email"}, message="It looks like your already have an account!")
+ * @ORM\HasLifecycleCallbacks()
  */
 class User implements UserInterface
 {
@@ -54,7 +63,7 @@ class User implements UserInterface
      * @ORM\Column(type="string", length=180, unique=true)
      * @Assert\NotBlank()
      * @Assert\Email()
-     * @Groups({"user:register"})
+     * @Groups({"user:register", "user:auth"})
      */
     private $email;
 
@@ -72,27 +81,27 @@ class User implements UserInterface
     /**
      * @ORM\Column(type="string", length=55)
      * @Assert\NotBlank()
-     * @Groups({"user:register"})
+     * @Groups({"user:register", "user:auth"})
      */
     private $name;
 
     /**
      * @ORM\Column(type="string", length=55)
      * @Assert\NotBlank()
-     * @Groups({"user:register"})
+     * @Groups({"user:register", "user:auth"})
      */
     private $surname;
 
     /**
      * @ORM\Column(type="string", length=10)
-     * @Groups({"user:register"})
+     * @Groups({"user:register", "user:auth"})
      */
     private $phone;
 
     /**
      * @ORM\Column(type="string", length=55)
      * @Assert\NotBlank()
-     * @Groups({"user:register"})
+     * @Groups({"user:register", "user:auth"})
      */
     private $companyName;
     
@@ -101,6 +110,21 @@ class User implements UserInterface
      * @Groups({"user:register"})
      */
     public $plainPassword;
+    
+    /**
+     * @Groups({"user:register", "user:auth"})
+    */
+    public $token;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Contact::class, mappedBy="user")
+     */
+    private $contacts;
+
+    public function __construct()
+    {
+        $this->contacts = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -245,5 +269,35 @@ class User implements UserInterface
     public function setPlainPassword($plainPassword): void
     {
         $this->plainPassword = $plainPassword;
+    }
+
+    /**
+     * @return Collection|Contact[]
+     */
+    public function getContacts(): Collection
+    {
+        return $this->contacts;
+    }
+
+    public function addContact(Contact $contact): self
+    {
+        if (!$this->contacts->contains($contact)) {
+            $this->contacts[] = $contact;
+            $contact->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContact(Contact $contact): self
+    {
+        if ($this->contacts->removeElement($contact)) {
+            // set the owning side to null (unless already changed)
+            if ($contact->getUser() === $this) {
+                $contact->setUser(null);
+            }
+        }
+
+        return $this;
     }
 }

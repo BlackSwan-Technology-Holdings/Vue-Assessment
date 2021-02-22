@@ -18,22 +18,6 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 class SecurityController extends AbstractController
 {
     /**
-     * @Route("/login", name="app_login", methods={"POST"})
-     */
-    public function login(IriConverterInterface $iriConverter)
-    {
-        if (!$this->isGranted('IS_AUTHENTICATED_FULLY')) {
-            return $this->json([
-                'error' => 'Invalid login request: check that the Content-Type header is "application/json".'
-            ], 400);
-        }
-        
-        return new Response(null, 204, [
-            //'Redirect' => $this->generateUrl('backend', ['wildcard' => 'dashboard'])
-        ]);
-    }
-
-    /**
      * @Route("/logout", name="app_logout")
      */
     public function logout()
