@@ -2,14 +2,42 @@
 
 namespace App\Entity\Users;
 
+use ApiPlatform\Core\Annotation\ApiResource;
+use App\Controller\ApiPlatform\Register;
 use App\Repository\Users\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Gedmo\SoftDeleteable\Traits\SoftDeleteableEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
+ * @ApiResource(
+ *     collectionOperations={
+ *         "post"={
+ *             "path"="/register",
+ *             "method"="POST",
+ *             "swagger_context"={
+ *                 "tags"={"Authentication"},
+ *                 "summary"={"User registration"}
+ *             },
+ *             "denormalization_context"={
+ *                  "groups"={"user:register"}
+ *              }
+ *         },
+ *         "get"={
+ *             "path"="/users",
+ *             "method"="GET",
+ *             "swagger_context"={
+ *                 "tags"={"User"}
+ *             }
+ *          }
+ *     },
+ * )
+ * @UniqueEntity(fields={"email"}, message="It looks like your already have an account!")
  */
 class User implements UserInterface
 {
@@ -24,6 +52,9 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
+     * @Assert\NotBlank()
+     * @Assert\Email()
+     * @Groups({"user:register"})
      */
     private $email;
 
@@ -40,23 +71,36 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=55)
+     * @Assert\NotBlank()
+     * @Groups({"user:register"})
      */
     private $name;
 
     /**
      * @ORM\Column(type="string", length=55)
+     * @Assert\NotBlank()
+     * @Groups({"user:register"})
      */
     private $surname;
 
     /**
      * @ORM\Column(type="string", length=10)
+     * @Groups({"user:register"})
      */
     private $phone;
 
     /**
      * @ORM\Column(type="string", length=55)
+     * @Assert\NotBlank()
+     * @Groups({"user:register"})
      */
     private $companyName;
+    
+    /**
+     * @Assert\NotBlank()
+     * @Groups({"user:register"})
+     */
+    public $plainPassword;
 
     public function getId(): ?int
     {
@@ -185,5 +229,21 @@ class User implements UserInterface
         $this->companyName = $companyName;
 
         return $this;
+    }
+    
+    /**
+     * @return mixed
+     */
+    public function getPlainPassword()
+    {
+        return $this->plainPassword;
+    }
+    
+    /**
+     * @param mixed $plainPassword
+     */
+    public function setPlainPassword($plainPassword): void
+    {
+        $this->plainPassword = $plainPassword;
     }
 }
